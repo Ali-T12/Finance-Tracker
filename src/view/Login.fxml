@@ -8,27 +8,58 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-
-<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/25" fx:controller="controller.LoginController">
+<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: #fff7fa;" stylesheets="@style.css" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.LoginController">
    <children>
-      <VBox alignment="TOP_CENTER" layoutX="132.0" layoutY="93.0" prefHeight="200.0" prefWidth="313.0">
+      <VBox alignment="CENTER" layoutX="4.0" layoutY="5.0" prefHeight="393.0" prefWidth="593.0" spacing="20.0" style="-fx-background-color: aqua; -fx-border-color: black; -fx-border-width: 5; -fx-border-radius: 15; -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 4);" styleClass="vbox">
          <children>
-            <Label text="Label" />
-            <Label text="Label" />
-            <TextField />
-            <Label text="Label" />
-            <PasswordField />
-            <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
+            <Label fx:id="titleLabel" prefWidth="231.0" text="Finance Tracker">
+               <font>
+                  <Font name="Arial Bold" size="30.0" />
+               </font></Label>
+            <HBox alignment="CENTER" prefHeight="40.0" prefWidth="600.0" spacing="40.0">
                <children>
-                  <Button mnemonicParsing="false" text="Button" />
-                  <Button mnemonicParsing="false" text="Button" />
+                  <Label text="Email">
+                     <font>
+                        <Font name="System Bold" size="14.0" />
+                     </font>
+                  </Label>
+                  <TextField alignment="CENTER" />
+               </children>
+            </HBox>
+            <HBox alignment="CENTER" prefHeight="50.0" prefWidth="600.0" spacing="20.0">
+               <children>
+                  <Label text="Password">
+                     <font>
+                        <Font name="System Bold" size="14.0" />
+                     </font>
+                  </Label>
+                  <PasswordField alignment="CENTER" />
+               </children>
+            </HBox>
+            <HBox alignment="CENTER" prefHeight="58.0" prefWidth="600.0" spacing="20.0">
+               <children>
+                  <Button fx:id="loginButton" mnemonicParsing="false" text="Login">
+                     <font>
+                        <Font size="14.0" />
+                     </font></Button>
+                  <Button fx:id="signupButton" mnemonicParsing="false" text="Sign up">
+                     <font>
+                        <Font size="14.0" />
+                     </font></Button>
                </children>
                <opaqueInsets>
                   <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
                </opaqueInsets>
             </HBox>
          </children>
+         <opaqueInsets>
+            <Insets />
+         </opaqueInsets>
+         <padding>
+            <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+         </padding>
       </VBox>
    </children>
 </AnchorPane>
