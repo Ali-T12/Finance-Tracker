@@ -3,16 +3,16 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-
-<AnchorPane id="AnchorPane" prefHeight="453.0" prefWidth="604.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/25" fx:controller="controller.SignupController">
-   <children>
-      <VBox alignment="CENTER" prefHeight="453.0" prefWidth="604.0" style="-fx-background-color: #d0d7de; -fx-border-color: black; -fx-border-width: 5; -fx-border-radius: 15; -fx-background-radius: 20;">
+<BorderPane prefHeight="399.0" prefWidth="647.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.SignupController">
+   <center>
+      <VBox alignment="CENTER" prefHeight="453.0" prefWidth="604.0" style="-fx-background-color: #d0d7de; -fx-border-color: black; -fx-border-width: 5; -fx-border-radius: 15; -fx-background-radius: 20;" BorderPane.alignment="CENTER">
          <children>
             <Label text="Sign Up">
                <font>
@@ -26,7 +26,7 @@
                         <Font name="System Bold" size="14.0" />
                      </font>
                   </Label>
-                  <TextField>
+                  <TextField fx:id="firstNameField">
                      <font>
                         <Font size="14.0" />
                      </font>
@@ -36,7 +36,7 @@
                         <Font name="System Bold" size="14.0" />
                      </font>
                   </Label>
-                  <TextField>
+                  <TextField fx:id="lastNameField">
                      <font>
                         <Font size="14.0" />
                      </font>
@@ -46,14 +46,14 @@
                   <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
                </padding>
             </HBox>
-            <HBox alignment="CENTER" layoutY="50.0" prefHeight="53.0" prefWidth="604.0" spacing="20.0">
+            <HBox alignment="CENTER" prefHeight="53.0" prefWidth="604.0" spacing="20.0">
                <children>
-                  <Label layoutX="50.0" text="Email">
+                  <Label text="Email">
                      <font>
                         <Font name="System Bold" size="14.0" />
                      </font>
                   </Label>
-                  <TextField prefHeight="25.0" prefWidth="225.0">
+                  <TextField fx:id="emailField" prefHeight="25.0" prefWidth="225.0">
                      <font>
                         <Font size="14.0" />
                      </font>
@@ -63,36 +63,45 @@
                   <Insets bottom="30.0" right="220.0" top="30.0" />
                </padding>
             </HBox>
-            <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="10.0">
+            <HBox alignment="CENTER" prefHeight="100.0" prefWidth="604.0" spacing="10.0">
                <children>
                   <Label text="Password">
                      <font>
                         <Font name="System Bold" size="14.0" />
                      </font>
                   </Label>
-                  <TextField>
+                  <PasswordField fx:id="passwordField">
                      <font>
                         <Font size="14.0" />
                      </font>
-                  </TextField>
+                  </PasswordField>
                   <Label prefHeight="20.0" prefWidth="124.0" text="Confirm Password">
                      <font>
                         <Font name="System Bold" size="14.0" />
                      </font>
                   </Label>
-                  <TextField>
+                  <PasswordField fx:id="confirmPasswordField">
                      <font>
                         <Font size="14.0" />
                      </font>
-                  </TextField>
+                  </PasswordField>
                </children>
             </HBox>
-            <Button mnemonicParsing="false" text="Sign up">
-               <font>
-                  <Font name="System Bold" size="14.0" />
-               </font>
-            </Button>
+            <HBox alignment="CENTER" prefHeight="66.0" prefWidth="594.0" spacing="20.0">
+               <children>
+                  <Button fx:id="signupButton" mnemonicParsing="false" onAction="#handleSignup" text="Sign up">
+                     <font>
+                        <Font name="System Bold" size="14.0" />
+                     </font>
+                  </Button>
+                  <Button fx:id="cancelButton" mnemonicParsing="false" onAction="#handleCancel" text="Cancel">
+                     <font>
+                        <Font name="System Bold" size="14.0" />
+                     </font>
+                  </Button>
+               </children>
+            </HBox>
          </children>
       </VBox>
-   </children>
-</AnchorPane>
+   </center>
+</BorderPane>

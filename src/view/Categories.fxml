@@ -5,15 +5,14 @@
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-
-<AnchorPane id="AnchorPane" prefHeight="400.0" prefWidth="600.0" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/25" fx:controller="controller.CategoriesController">
-   <children>
-      <HBox layoutY="-3.0" prefHeight="409.0" prefWidth="600.0">
+<BorderPane prefHeight="385.0" prefWidth="686.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.CategoriesController">
+   <center>
+      <HBox prefHeight="409.0" prefWidth="600.0" BorderPane.alignment="CENTER">
          <children>
             <VBox alignment="CENTER" prefHeight="409.0" prefWidth="187.0">
                <children>
@@ -22,26 +21,32 @@
                         <Font name="System Bold" size="14.0" />
                      </font>
                   </Label>
-                  <TextField prefHeight="25.0" prefWidth="117.0">
+                  <TextField fx:id="nameField" prefHeight="25.0" prefWidth="117.0">
                      <font>
                         <Font size="14.0" />
                      </font>
                   </TextField>
                   <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="20.0">
                      <children>
-                        <Button mnemonicParsing="false" text="Button" />
-                        <Button mnemonicParsing="false" text="Button" />
+                        <Button fx:id="addButton" mnemonicParsing="false" onAction="#handleAddCategory" text="Add">
+                           <font>
+                              <Font name="System Bold" size="14.0" />
+                           </font></Button>
+                        <Button fx:id="editButton" mnemonicParsing="false" onAction="#handleEditCategory" text="Edit">
+                           <font>
+                              <Font name="System Bold" size="14.0" />
+                           </font></Button>
                      </children>
                   </HBox>
                </children>
             </VBox>
-            <TableView prefHeight="409.0" prefWidth="508.0">
-              <columns>
-                <TableColumn prefWidth="216.0" text="ID" />
-                <TableColumn minWidth="8.0" prefWidth="248.0" text="Name" />
-              </columns>
+            <TableView fx:id="categoryTable" prefHeight="362.0" prefWidth="472.0">
+               <columns>
+                  <TableColumn fx:id="idColumn" prefWidth="216.0" text="ID" />
+                  <TableColumn fx:id="nameColumn" minWidth="8.0" prefWidth="248.0" text="Name" />
+               </columns>
             </TableView>
          </children>
       </HBox>
-   </children>
-</AnchorPane>
+   </center>
+</BorderPane>
