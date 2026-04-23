@@ -71,7 +71,7 @@ public class LoginController {
             Stage stage = (Stage) loginButton.getScene().getWindow();
             stage.setScene(new Scene(root));
             stage.setTitle("Dashboard");
-            stage.setMaximized(true);
+            stage.setResizable(false);
             stage.show();
 
         } catch (IOException e) {

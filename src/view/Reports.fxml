@@ -10,19 +10,19 @@
    <center>
       <VBox alignment="CENTER" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
          <children>
-            <Label text="Report">
+            <Label text="Report" textFill="WHITE">
                <font>
                   <Font name="System Bold" size="24.0" />
                </font>
             </Label>
             <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="20.0">
                <children>
-                  <Label text="Total Income:">
+                  <Label text="Total Income:" textFill="WHITE">
                      <font>
                         <Font name="System Bold" size="14.0" />
                      </font>
                   </Label>
-                  <Label fx:id="incomeLabel" text="0.0">
+                  <Label fx:id="incomeLabel" text="0.0" textFill="WHITE">
                      <font>
                         <Font name="System Bold" size="14.0" />
                      </font>
@@ -31,12 +31,12 @@
             </HBox>
             <HBox alignment="CENTER" prefHeight="51.0" prefWidth="600.0" spacing="20.0">
                <children>
-                  <Label text="Total Expenses:">
+                  <Label text="Total Expenses:" textFill="WHITE">
                      <font>
                         <Font name="System Bold" size="14.0" />
                      </font>
                   </Label>
-                  <Label fx:id="expenseLabel" text="0.0">
+                  <Label fx:id="expenseLabel" text="0.0" textFill="WHITE">
                      <font>
                         <Font name="System Bold" size="14.0" />
                      </font>
@@ -45,12 +45,12 @@
             </HBox>
             <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0" spacing="20.0">
                <children>
-                  <Label text="Balance:">
+                  <Label text="Balance:" textFill="WHITE">
                      <font>
                         <Font name="System Bold" size="14.0" />
                      </font>
                   </Label>
-                  <Label fx:id="balanceLabel" text="0.0">
+                  <Label fx:id="balanceLabel" text="0.0" textFill="WHITE">
                      <font>
                         <Font name="System Bold" size="14.0" />
                      </font>
@@ -59,12 +59,12 @@
             </HBox>
             <HBox alignment="CENTER" prefHeight="62.0" prefWidth="600.0" spacing="20.0">
                <children>
-                  <Label text="Summery:">
+                  <Label text="Summery:" textFill="WHITE">
                      <font>
                         <Font name="System Bold" size="14.0" />
                      </font>
                   </Label>
-                  <Label fx:id="summaryLabel" text="yrd">
+                  <Label fx:id="summaryLabel" text="yrd" textFill="WHITE">
                      <font>
                         <Font name="System Bold" size="14.0" />
                      </font>

@@ -5,14 +5,14 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="341.0" prefWidth="499.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.LoginController">
-   <center>
-      <VBox alignment="CENTER" prefHeight="393.0" prefWidth="593.0" spacing="20.0" style="-fx-background-color: #d0d7de; -fx-border-color: black; -fx-border-width: 5; -fx-border-radius: 15; -fx-background-radius: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 4);" styleClass="vbox" BorderPane.alignment="CENTER">
+<AnchorPane prefHeight="200.0" prefWidth="200.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.LoginController">
+   <children>
+      <VBox alignment="CENTER" prefHeight="393.0" prefWidth="593.0" spacing="20.0" style="-fx-background-color: linear-gradient(to bottom right, #00c6ff, #0072ff);" styleClass="vbox">
          <children>
             <Label fx:id="titleLabel" prefWidth="231.0" text="Finance Tracker">
                <font>
@@ -41,14 +41,14 @@
             </HBox>
             <HBox alignment="CENTER" prefHeight="58.0" prefWidth="600.0" spacing="20.0">
                <children>
-                  <Button fx:id="loginButton" mnemonicParsing="false" onAction="#handleLogin" text="Login">
+                  <Button fx:id="loginButton" mnemonicParsing="false" onAction="#handleLogin" style="-fx-background-color: blue;" text="Login" textFill="WHITE">
                      <font>
-                        <Font size="14.0" />
+                        <Font name="System Bold" size="14.0" />
                      </font>
                   </Button>
-                  <Button fx:id="signupButton" mnemonicParsing="false" onAction="#goToSignup" text="Sign up">
+                  <Button fx:id="signupButton" mnemonicParsing="false" onAction="#goToSignup" style="-fx-background-color: blue;" text="Sign up" textFill="WHITE">
                      <font>
-                        <Font size="14.0" />
+                        <Font name="System Bold" size="14.0" />
                      </font>
                   </Button>
                </children>
@@ -64,5 +64,5 @@
             <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
          </padding>
       </VBox>
-   </center>
-</BorderPane>
+   </children>
+</AnchorPane>

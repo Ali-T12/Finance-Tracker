@@ -14,13 +14,15 @@ import javafx.stage.Stage;
  * @author Ali
  */
 public class Navigator {
-     public static void switchScene(Stage stage, String fxmlFile, String title) {
+
+    public static void switchScene(Stage stage, String fxmlFile, String title) {
         try {
             FXMLLoader loader = new FXMLLoader(Navigator.class.getResource("/view/" + fxmlFile));
             Parent root = loader.load();
             Scene scene = new Scene(root);
             stage.setTitle(title);
             stage.setScene(scene);
+            stage.setResizable(false);
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
