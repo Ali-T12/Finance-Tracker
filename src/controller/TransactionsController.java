@@ -1,12 +1,14 @@
 /**
- *علي حمال اسعيد 120220484  
+ *علي حمال اسعيد 120220484
  * محمد منذر الغزالي 120220852
  * تحسين وسام عودة 120220463
  */
 package controller;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -21,12 +23,22 @@ import model.Category;
 import model.Transaction;
 import service.FileManager;
 import util.AlertUtil;
+import util.Session;
 
 /**
  *
  * @author Ali
  */
 public class TransactionsController {
+
+    @FXML
+    private TextField searchCategoryField;
+
+    @FXML
+    private DatePicker filterDatePicker;
+
+    @FXML
+    private ComboBox<String> sortComboBox;
 
     @FXML
     private TextField amountField;
@@ -70,7 +82,10 @@ public class TransactionsController {
     @FXML
     public void initialize() {
 
-        categories = FileManager.loadCategories();
+        categories = FileManager.loadCategories()
+                .stream()
+                .filter(c -> c.getUserId() == Session.currentUser.getId())
+                .collect(Collectors.toList());
 
         for (Category c : categories) {
             categoryComboBox.getItems().add(c.getName());
@@ -78,13 +93,25 @@ public class TransactionsController {
 
         typeComboBox.setItems(FXCollections.observableArrayList("Income", "Expense"));
 
+        sortComboBox.setItems(FXCollections.observableArrayList(
+                "Amount Ascending",
+                "Amount Descending",
+                "Date Ascending",
+                "Date Descending"
+        ));
+
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         userIdColumn.setCellValueFactory(new PropertyValueFactory<>("userId"));
         categoryIdColumn.setCellValueFactory(new PropertyValueFactory<>("categoryId"));
         amountColumn.setCellValueFactory(new PropertyValueFactory<>("amount"));
         typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("date"));
-        List<Transaction> loadedTransactions = FileManager.loadTransactions();
+        List<Transaction> allTransactions = FileManager.loadTransactions();
+
+        List<Transaction> loadedTransactions = allTransactions.stream()
+                .filter(t -> t.getUserId() == Session.currentUser.getId())
+                .collect(Collectors.toList());
+
         transactions.addAll(loadedTransactions);
 
         if (!loadedTransactions.isEmpty()) {
@@ -114,19 +141,108 @@ public class TransactionsController {
                 }
         );
     }
+    
+    @FXML
+private void handleSearchTransaction() {
+    String keyword = searchCategoryField.getText().trim();
+    LocalDate selectedDate = filterDatePicker.getValue();
+
+    if (keyword.isEmpty() && selectedDate == null) {
+        showError("Please enter a category or select a date.");
+        return;
+    }
+
+    List<Transaction> result = transactions.stream()
+            .filter(t -> {
+                boolean matchesCategory = true;
+                boolean matchesDate = true;
+
+                if (!keyword.isEmpty()) {
+                    String categoryName = categories.stream()
+                            .filter(c -> c.getId() == t.getCategoryId())
+                            .map(Category::getName)
+                            .findFirst()
+                            .orElse("");
+
+                    matchesCategory = categoryName.toLowerCase().contains(keyword.toLowerCase());
+                }
+
+                if (selectedDate != null) {
+                    matchesDate = t.getDate().equals(selectedDate.toString());
+                }
+
+                return matchesCategory && matchesDate;
+            })
+            .collect(Collectors.toList());
+
+    if (result.isEmpty()) {
+        showError("No transactions found.");
+        return;
+    }
+
+    transactionTable.setItems(FXCollections.observableArrayList(result));
+}
+
+@FXML
+private void handleSortTransaction() {
+    String sortOption = sortComboBox.getValue();
+
+    if (sortOption == null) {
+        showError("Please select a sorting option.");
+        return;
+    }
+
+    List<Transaction> sortedList;
+
+    switch (sortOption) {
+        case "Amount Ascending":
+            sortedList = transactions.stream()
+                    .sorted(Comparator.comparingDouble(Transaction::getAmount))
+                    .collect(Collectors.toList());
+            break;
+
+        case "Amount Descending":
+            sortedList = transactions.stream()
+                    .sorted(Comparator.comparingDouble(Transaction::getAmount).reversed())
+                    .collect(Collectors.toList());
+            break;
+
+        case "Date Ascending":
+            sortedList = transactions.stream()
+                    .sorted(Comparator.comparing(Transaction::getDate))
+                    .collect(Collectors.toList());
+            break;
+
+        default:
+            sortedList = transactions.stream()
+                    .sorted(Comparator.comparing(Transaction::getDate).reversed())
+                    .collect(Collectors.toList());
+            break;
+    }
+
+    transactionTable.setItems(FXCollections.observableArrayList(sortedList));
+}
+
+@FXML
+private void handleResetTransaction() {
+    transactionTable.setItems(transactions);
+    searchCategoryField.clear();
+    filterDatePicker.setValue(null);
+    sortComboBox.setValue(null);
+}
 
     @FXML
     private void handleAddTransaction() {
-        
-        if (datePicker.getValue() == null) {
-    showError("Please select a date.");
-    return;
-}
 
-if (datePicker.getValue().isAfter(java.time.LocalDate.now())) {
-    showError("Future date is not allowed.");
-    return;
-}
+        if (datePicker.getValue() == null) {
+            showError("Please select a date.");
+            return;
+        }
+
+        if (datePicker.getValue().isAfter(java.time.LocalDate.now())) {
+            showError("Future date is not allowed.");
+            return;
+        }
 
         if (datePicker.getValue() == null) {
             AlertUtil.showError("Please select a date");
@@ -170,7 +286,7 @@ if (datePicker.getValue().isAfter(java.time.LocalDate.now())) {
 
         Transaction t = new Transaction(
                 nextId++,
-                1,
+                Session.currentUser.getId(),
                 categoryId,
                 amount,
                 typeComboBox.getValue(),
@@ -178,7 +294,7 @@ if (datePicker.getValue().isAfter(java.time.LocalDate.now())) {
         );
 
         transactions.add(t);
-        FileManager.saveTransactions(transactions);
+        saveCurrentUserTransactions();
 
         amountField.clear();
         categoryComboBox.setValue(null);
@@ -190,16 +306,16 @@ if (datePicker.getValue().isAfter(java.time.LocalDate.now())) {
     private void handleEditTransaction() {
 
         Transaction selected = transactionTable.getSelectionModel().getSelectedItem();
-        
-        if (datePicker.getValue() == null) {
-    showError("Please select a date.");
-    return;
-}
 
-if (datePicker.getValue().isAfter(java.time.LocalDate.now())) {
-    showError("Future date is not allowed.");
-    return;
-}
+        if (datePicker.getValue() == null) {
+            showError("Please select a date.");
+            return;
+        }
+
+        if (datePicker.getValue().isAfter(java.time.LocalDate.now())) {
+            showError("Future date is not allowed.");
+            return;
+        }
 
         if (selected == null) {
             showError("Select a transaction first.");
@@ -243,12 +359,22 @@ if (datePicker.getValue().isAfter(java.time.LocalDate.now())) {
         selected.setCategoryId(categoryId);
 
         transactionTable.refresh();
-        FileManager.saveTransactions(transactions);
+        saveCurrentUserTransactions();
 
         amountField.clear();
         categoryComboBox.setValue(null);
         typeComboBox.setValue(null);
         datePicker.setValue(null);
+    }
+
+    private void saveCurrentUserTransactions() {
+        List<Transaction> allTransactions = FileManager.loadTransactions();
+
+        allTransactions.removeIf(t -> t.getUserId() == Session.currentUser.getId());
+
+        allTransactions.addAll(transactions);
+
+        FileManager.saveTransactions(allTransactions);
     }
 
     private void showError(String msg) {

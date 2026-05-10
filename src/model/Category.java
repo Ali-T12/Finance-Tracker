@@ -11,15 +11,20 @@ package model;
  */
 public class Category {
     private int id;
+    private int userId;
     private String name;
 
-    public Category(int id, String name) {
+    public Category(int id, int userId, String name) {
         this.id = id;
+        this.userId = userId;
         this.name = name;
     }
 
     public void setId(int id) {
         this.id = id;
+    }
+     public int getUserId() {
+        return userId;
     }
 
     public void setName(String name) {
@@ -33,8 +38,8 @@ public class Category {
     public String getName() {
         return name;
     }
-     @Override
+    @Override
     public String toString() {
-        return id + "," + name;
+        return id + "," + userId + "," + name;
     }
 }

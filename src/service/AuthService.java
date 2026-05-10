@@ -26,11 +26,24 @@ public class AuthService {
         }
 
         String encryptedPassword = MD5Util.encrypt(password);
-        User newUser = new User(id, firstName, lastName, email, encryptedPassword);
+        User newUser = new User(getNextUserId(), firstName, lastName, email, encryptedPassword);
         FileManager.saveUser(newUser);
 
         return true;
     }
+     
+     private static int getNextUserId() {
+    List<User> users = FileManager.loadUsers();
+
+    if (users.isEmpty()) {
+        return 1;
+    }
+
+    return users.stream()
+            .mapToInt(User::getId)
+            .max()
+            .getAsInt() + 1;
+}
 
     public static User findUserByEmail(String email) {
         List<User> users = FileManager.loadUsers();

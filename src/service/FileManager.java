@@ -61,29 +61,34 @@ public class FileManager {
     }
 
     public static List<Category> loadCategories() {
-        List<Category> categories = new ArrayList<>();
-        File file = new File("src/data/categories.txt");
+    List<Category> categories = new ArrayList<>();
+    File file = new File("src/data/categories.txt");
 
-        if (!file.exists()) {
-            return categories;
-        }
-
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] parts = line.split(",");
-                if (parts.length == 2) {
-                    int id = Integer.parseInt(parts[0]);
-                    String name = parts[1];
-                    categories.add(new Category(id, name));
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+    if (!file.exists()) {
         return categories;
     }
+
+    try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+        String line;
+
+        while ((line = br.readLine()) != null) {
+            String[] parts = line.split(",");
+
+            if (parts.length == 3) {
+                int id = Integer.parseInt(parts[0]);
+                int userId = Integer.parseInt(parts[1]);
+                String name = parts[2];
+
+                categories.add(new Category(id, userId, name));
+            }
+        }
+
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+
+    return categories;
+}
 
     public static void saveCategories(List<Category> categories) {
         File file = new File("src/data/categories.txt");

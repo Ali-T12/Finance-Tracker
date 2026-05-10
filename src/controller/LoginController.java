@@ -18,6 +18,7 @@ import model.User;
 import service.AuthService;
 import util.AlertUtil;
 import util.Navigator;
+import util.Session;
 
 /**
  *
@@ -72,6 +73,8 @@ public class LoginController {
 
             DashboardController controller = loader.getController();
             controller.setWelcomeName(user.getFirstName());
+            
+            Session.currentUser = user;
 
             Stage stage = (Stage) loginButton.getScene().getWindow();
             stage.setScene(new Scene(root));
