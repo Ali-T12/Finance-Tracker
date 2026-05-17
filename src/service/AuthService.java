@@ -5,55 +5,62 @@
  */
 package service;
 
-import java.util.List;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import model.User;
+import util.DatabaseConnection;
 import util.MD5Util;
 
-
-/**
- *
- * @author Ali
- */
 public class AuthService {
-     public static boolean signUp(int id, String firstName, String lastName, String email, String password) {
 
-        List<User> users = FileManager.loadUsers();
-
-        for (User user : users) {
-            if (user.getEmail().equalsIgnoreCase(email)) {
-                return false;
-            }
+    public static boolean signUp(int id, String firstName, String lastName, String email, String password) {
+        if (findUserByEmail(email) != null) {
+            return false; 
         }
 
+        String query = "INSERT INTO users (first_name, last_name, email, password_hash) VALUES (?, ?, ?, ?)";
         String encryptedPassword = MD5Util.encrypt(password);
-        User newUser = new User(getNextUserId(), firstName, lastName, email, encryptedPassword);
-        FileManager.saveUser(newUser);
 
-        return true;
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            
+            ps.setString(1, firstName);
+            ps.setString(2, lastName);
+            ps.setString(3, email);
+            ps.setString(4, encryptedPassword);
+
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
-     
-     private static int getNextUserId() {
-    List<User> users = FileManager.loadUsers();
-
-    if (users.isEmpty()) {
-        return 1;
-    }
-
-    return users.stream()
-            .mapToInt(User::getId)
-            .max()
-            .getAsInt() + 1;
-}
 
     public static User findUserByEmail(String email) {
-        List<User> users = FileManager.loadUsers();
+        String query = "SELECT * FROM users WHERE LOWER(email) = LOWER(?)";
 
-        for (User user : users) {
-            if (user.getEmail().equalsIgnoreCase(email)) {
-                return user;
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            
+            ps.setString(1, email);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new User(
+                        rs.getInt("id"),
+                        rs.getString("first_name"),
+                        rs.getString("last_name"),
+                        rs.getString("email"),
+                        rs.getString("password_hash")
+                    );
+                }
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-
         return null;
     }
 

@@ -1,10 +1,13 @@
-/**
- *علي حمال اسعيد 120220484
- * محمد منذر الغزالي 120220852
- * تحسين وسام عودة 120220463
- */
+
+
+
 package controller;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,7 +21,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import model.Category;
-import service.FileManager;
+import util.DatabaseConnection;
 import util.Session;
 
 /**
@@ -47,29 +50,14 @@ public class CategoriesController {
 
     private ObservableList<Category> categories = FXCollections.observableArrayList();
 
-    private int nextId = 1;
-
     @FXML
     public void initialize() {
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
 
-        List<Category> loadedCategories = FileManager.loadCategories()
-                .stream()
-                .filter(c -> c.getUserId() == Session.currentUser.getId())
-                .collect(Collectors.toList());
+        // جلب البيانات الخاصة بالمستخدم الحالي من قاعدة البيانات مباشرة
+        loadCategoriesFromDatabase();
 
-        categories.addAll(loadedCategories);
-
-        if (!loadedCategories.isEmpty()) {
-            int maxId = loadedCategories.stream()
-                    .mapToInt(Category::getId)
-                    .max()
-                    .getAsInt();
-            nextId = maxId + 1;
-        }
-
-        categoryTable.setItems(categories);
         sortComboBox.setItems(FXCollections.observableArrayList("Name Ascending", "Name Descending"));
 
         categoryTable.getSelectionModel().selectedItemProperty().addListener(
@@ -81,6 +69,31 @@ public class CategoriesController {
         );
     }
 
+    // دالة لجلب التصنيفات من قاعدة البيانات للمستخدم المسجل حالياً
+    private void loadCategoriesFromDatabase() {
+        categories.clear();
+        String query = "SELECT * FROM categories WHERE user_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            
+            ps.setInt(1, Session.currentUser.getId());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    categories.add(new Category(
+                            rs.getInt("id"),
+                            rs.getInt("user_id"),
+                            rs.getString("name")
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            showError("Failed to load categories from database.");
+        }
+        categoryTable.setItems(categories);
+    }
+
     @FXML
     private void handleAddCategory() {
         String name = nameField.getText().trim();
@@ -90,29 +103,32 @@ public class CategoriesController {
             return;
         }
 
-        for (Category c : categories) {
-            if (c.getName().equalsIgnoreCase(name)) {
-                showError("Duplicate category name.");
-                return;
-            }
+        // التحقق من التكرار باستخدام Streams على القائمة المحملة
+        boolean isDuplicate = categories.stream()
+                .anyMatch(c -> c.getName().equalsIgnoreCase(name));
+
+        if (isDuplicate) {
+            showError("Duplicate category name.");
+            return;
         }
 
-        categories.add(new Category(nextId++, Session.currentUser.getId(), name));
-        saveCurrentUserCategories();
+        // إدخال التصنيف الجديد في قاعدة البيانات
+        String query = "INSERT INTO categories (user_id, name) VALUES (?, ?)";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            
+            ps.setInt(1, Session.currentUser.getId());
+            ps.setString(2, name);
+            ps.executeUpdate();
 
-        categoryTable.setItems(categories);
-        categoryTable.refresh();
+            // إعادة تحميل البيانات لتحديث الجدول بالـ ID الجديد التلقائي من قاعدة البيانات
+            loadCategoriesFromDatabase();
+            nameField.clear();
 
-        nameField.clear();
-    }
-
-    private void saveCurrentUserCategories() {
-        List<Category> allCategories = FileManager.loadCategories();
-
-        allCategories.removeIf(c -> c.getUserId() == Session.currentUser.getId());
-        allCategories.addAll(categories);
-
-        FileManager.saveCategories(allCategories);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            showError("Failed to add category to database.");
+        }
     }
 
     @FXML
@@ -131,20 +147,34 @@ public class CategoriesController {
             return;
         }
 
-        for (Category c : categories) {
-            if (c != selected && c.getName().equalsIgnoreCase(newName)) {
-                showError("Duplicate category name.");
-                return;
-            }
+        // التحقق من عدم تكرار الاسم مع أي تصنيف آخر لنفس المستخدم
+        boolean isDuplicate = categories.stream()
+                .anyMatch(c -> c.getId() != selected.getId() && c.getName().equalsIgnoreCase(newName));
+
+        if (isDuplicate) {
+            showError("Duplicate category name.");
+            return;
         }
 
-        selected.setName(newName);
-        saveCurrentUserCategories();
+        // تحديث الاسم في قاعدة البيانات بناءً على الـ ID
+        String query = "UPDATE categories SET name = ? WHERE id = ? AND user_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(query)) {
+            
+            ps.setString(1, newName);
+            ps.setInt(2, selected.getId());
+            ps.setInt(3, Session.currentUser.getId());
+            ps.executeUpdate();
 
-        categoryTable.setItems(categories);
-        categoryTable.refresh();
+            // تحديث الواجهة مباشرة
+            selected.setName(newName);
+            categoryTable.refresh();
+            nameField.clear();
 
-        nameField.clear();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            showError("Failed to update category.");
+        }
     }
 
     @FXML
@@ -156,6 +186,7 @@ public class CategoriesController {
             return;
         }
 
+        // الفلترة باستخدام الـ Streams المطلوبة في المشروع
         List<Category> result = categories.stream()
                 .filter(c -> c.getName().toLowerCase().contains(keyword.toLowerCase()))
                 .collect(Collectors.toList());
@@ -195,7 +226,6 @@ public class CategoriesController {
     @FXML
     private void handleResetCategory() {
         categoryTable.setItems(categories);
-
         searchField.clear();
         sortComboBox.setValue(null);
     }

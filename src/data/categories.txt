@@ -1,4 +1,0 @@
-1,1,Food
-2,1,Bank
-1,2,Food
-2,2,Bank
