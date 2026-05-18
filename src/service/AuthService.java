@@ -24,7 +24,7 @@ public class AuthService {
         String encryptedPassword = MD5Util.encrypt(password);
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
+            PreparedStatement ps = conn.prepareStatement(query)) {
             
             ps.setString(1, firstName);
             ps.setString(2, lastName);
@@ -44,7 +44,7 @@ public class AuthService {
         String query = "SELECT * FROM users WHERE LOWER(email) = LOWER(?)";
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
+            PreparedStatement ps = conn.prepareStatement(query)) {
             
             ps.setString(1, email);
             try (ResultSet rs = ps.executeQuery()) {
