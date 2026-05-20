@@ -1,19 +1,16 @@
 /**
- *علي حمال اسعيد 120220484
+ * علي حمال اسعيد 120220484
  * محمد منذر الغزالي 120220852
  * تحسين وسام عودة 120220463
  */
 package controller;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -26,14 +23,10 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import model.Category;
 import model.Transaction;
+import repository.CategoryRepository;
+import repository.TransactionRepository;
 import util.AlertUtil;
-import util.DatabaseConnection;
-import util.Session;
 
-/**
- *
- * @author Ali
- */
 public class TransactionsController {
 
     @FXML
@@ -67,7 +60,7 @@ public class TransactionsController {
     private TableColumn<Transaction, Integer> userIdColumn;
 
     @FXML
-    private TableColumn<Transaction, Integer> categoryIdColumn;
+    private TableColumn<Transaction, String> categoryIdColumn;
 
     @FXML
     private TableColumn<Transaction, Double> amountColumn;
@@ -81,19 +74,30 @@ public class TransactionsController {
     private ObservableList<Transaction> transactions = FXCollections.observableArrayList();
     private List<Category> categories = new ArrayList<>();
 
+    private CategoryRepository categoryRepository = new CategoryRepository();
+    private TransactionRepository transactionRepository = new TransactionRepository();
+
     @FXML
     public void initialize() {
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
-        userIdColumn.setCellValueFactory(new PropertyValueFactory<>("userId"));
-        categoryIdColumn.setCellValueFactory(new PropertyValueFactory<>("categoryId"));
+
+        userIdColumn.setCellValueFactory(cellData ->
+                new ReadOnlyObjectWrapper<>(cellData.getValue().getUser().getId())
+        );
+
+        categoryIdColumn.setCellValueFactory(cellData ->
+                new ReadOnlyObjectWrapper<>(cellData.getValue().getCategory().getName())
+        );
+
         amountColumn.setCellValueFactory(new PropertyValueFactory<>("amount"));
         typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("date"));
 
-        loadCategoriesFromDatabase();
-        loadTransactionsFromDatabase();
+        loadCategories();
+        loadTransactions();
 
         typeComboBox.setItems(FXCollections.observableArrayList("Income", "Expense"));
+
         sortComboBox.setItems(FXCollections.observableArrayList(
                 "Amount Ascending",
                 "Amount Descending",
@@ -108,123 +112,69 @@ public class TransactionsController {
                         typeComboBox.setValue(selected.getType());
                         datePicker.setValue(LocalDate.parse(selected.getDate()));
 
-                        for (Category c : categories) {
-                            if (c.getId() == selected.getCategoryId()) {
-                                categoryComboBox.setValue(c.getName());
-                                break;
-                            }
+                        if (selected.getCategory() != null) {
+                            categoryComboBox.setValue(selected.getCategory().getName());
                         }
                     }
                 }
         );
     }
 
-    private void loadCategoriesFromDatabase() {
+    private void loadCategories() {
         categories.clear();
         categoryComboBox.getItems().clear();
-        String query = "SELECT * FROM categories WHERE user_id = ?";
-        
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
-            ps.setInt(1, Session.currentUser.getId());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    Category c = new Category(rs.getInt("id"), rs.getInt("user_id"), rs.getString("name"));
-                    categories.add(c);
-                    categoryComboBox.getItems().add(c.getName());
-                }
+
+        List<Category> categoryList = categoryRepository.findAll();
+
+        if (categoryList != null) {
+            categories.addAll(categoryList);
+
+            for (Category c : categories) {
+                categoryComboBox.getItems().add(c.getName());
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            AlertUtil.showError("Failed to load categories.");
         }
     }
 
-    private void loadTransactionsFromDatabase() {
+    private void loadTransactions() {
         transactions.clear();
-        String query = "SELECT * FROM transactions WHERE user_id = ?";
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
-            ps.setInt(1, Session.currentUser.getId());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    transactions.add(new Transaction(
-                            rs.getInt("id"),
-                            rs.getInt("user_id"),
-                            rs.getInt("category_id"),
-                            rs.getDouble("amount"),
-                            rs.getString("type"),
-                            rs.getDate("date").toString()
-                    ));
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            showError("Failed to load transactions.");
+        List<Transaction> transactionList = transactionRepository.findAll();
+
+        if (transactionList != null) {
+            transactions.addAll(transactionList);
         }
+
         transactionTable.setItems(transactions);
     }
 
     @FXML
     private void handleAddTransaction() {
-        if (datePicker.getValue() == null) {
-            showError("Please select a date.");
+        if (!validateTransactionInput()) {
             return;
         }
 
-        if (datePicker.getValue().isAfter(LocalDate.now())) {
-            showError("Future date is not allowed.");
+        double amount = Double.parseDouble(amountField.getText().trim());
+        int categoryId = getSelectedCategoryId();
+
+        if (categoryId == -1) {
+            showError("Selected category not found.");
             return;
         }
 
-        if (amountField.getText().isEmpty()
-                || categoryComboBox.getValue() == null
-                || typeComboBox.getValue() == null) {
-            showError("Fill all fields.");
+        Transaction addedTransaction = transactionRepository.add(
+                categoryId,
+                amount,
+                typeComboBox.getValue(),
+                datePicker.getValue().toString()
+        );
+
+        if (addedTransaction == null) {
+            showError("Failed to save transaction.");
             return;
         }
 
-        double amount;
-        try {
-            amount = Double.parseDouble(amountField.getText());
-        } catch (Exception e) {
-            showError("Invalid amount.");
-            return;
-        }
-
-        if (amount <= 0) {
-            showError("Amount must be positive.");
-            return;
-        }
-
-        String categoryName = categoryComboBox.getValue();
-        int categoryId = categories.stream()
-                .filter(c -> c.getName().equals(categoryName))
-                .findFirst()
-                .get()
-                .getId();
-
-        String query = "INSERT INTO transactions (user_id, category_id, amount, type, date) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
-            ps.setInt(1, Session.currentUser.getId());
-            ps.setInt(2, categoryId);
-            ps.setDouble(3, amount);
-            ps.setString(4, typeComboBox.getValue());
-            ps.setString(5, datePicker.getValue().toString());
-            ps.executeUpdate();
-
-            loadTransactionsFromDatabase();
-            clearFields();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            showError("Failed to save transaction to database.");
-        }
+        loadTransactions();
+        clearFields();
     }
 
     @FXML
@@ -236,67 +186,33 @@ public class TransactionsController {
             return;
         }
 
-        if (datePicker.getValue() == null) {
-            showError("Please select a date.");
+        if (!validateTransactionInput()) {
             return;
         }
 
-        if (datePicker.getValue().isAfter(LocalDate.now())) {
-            showError("Future date is not allowed.");
+        double amount = Double.parseDouble(amountField.getText().trim());
+        int categoryId = getSelectedCategoryId();
+
+        if (categoryId == -1) {
+            showError("Selected category not found.");
             return;
         }
 
-        if (amountField.getText().isEmpty()
-                || categoryComboBox.getValue() == null
-                || typeComboBox.getValue() == null) {
-            showError("Fill all fields.");
-            return;
-        }
+        Transaction updatedTransaction = transactionRepository.update(
+                selected.getId(),
+                categoryId,
+                amount,
+                typeComboBox.getValue(),
+                datePicker.getValue().toString()
+        );
 
-        double amount;
-        try {
-            amount = Double.parseDouble(amountField.getText());
-        } catch (Exception e) {
-            showError("Invalid amount.");
-            return;
-        }
-
-        if (amount <= 0) {
-            showError("Amount must be positive.");
-            return;
-        }
-
-        String categoryName = categoryComboBox.getValue();
-        int categoryId = categories.stream()
-                .filter(c -> c.getName().equals(categoryName))
-                .findFirst()
-                .get()
-                .getId();
-
-        String query = "UPDATE transactions SET category_id = ?, amount = ?, type = ?, date = ? WHERE id = ? AND user_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
-            ps.setInt(1, categoryId);
-            ps.setDouble(2, amount);
-            ps.setString(3, typeComboBox.getValue());
-            ps.setString(4, datePicker.getValue().toString());
-            ps.setInt(5, selected.getId());
-            ps.setInt(6, Session.currentUser.getId());
-            ps.executeUpdate();
-
-            selected.setAmount(amount);
-            selected.setType(typeComboBox.getValue());
-            selected.setDate(datePicker.getValue().toString());
-            selected.setCategoryId(categoryId);
-
-            transactionTable.refresh();
-            clearFields();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
+        if (updatedTransaction == null) {
             showError("Failed to update transaction.");
+            return;
         }
+
+        loadTransactions();
+        clearFields();
     }
 
     @FXML
@@ -315,13 +231,14 @@ public class TransactionsController {
                     boolean matchesDate = true;
 
                     if (!keyword.isEmpty()) {
-                        String categoryName = categories.stream()
-                                .filter(c -> c.getId() == t.getCategoryId())
-                                .map(Category::getName)
-                                .findFirst()
-                                .orElse("");
+                        String categoryName = "";
 
-                        matchesCategory = categoryName.toLowerCase().contains(keyword.toLowerCase());
+                        if (t.getCategory() != null) {
+                            categoryName = t.getCategory().getName();
+                        }
+
+                        matchesCategory = categoryName.toLowerCase()
+                                .contains(keyword.toLowerCase());
                     }
 
                     if (selectedDate != null) {
@@ -388,6 +305,53 @@ public class TransactionsController {
         sortComboBox.setValue(null);
     }
 
+    private boolean validateTransactionInput() {
+        if (datePicker.getValue() == null) {
+            showError("Please select a date.");
+            return false;
+        }
+
+        if (datePicker.getValue().isAfter(LocalDate.now())) {
+            showError("Future date is not allowed.");
+            return false;
+        }
+
+        if (amountField.getText().trim().isEmpty()
+                || categoryComboBox.getValue() == null
+                || typeComboBox.getValue() == null) {
+            showError("Fill all fields.");
+            return false;
+        }
+
+        double amount;
+
+        try {
+            amount = Double.parseDouble(amountField.getText().trim());
+        } catch (Exception e) {
+            showError("Invalid amount.");
+            return false;
+        }
+
+        if (amount <= 0) {
+            showError("Amount must be positive.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private int getSelectedCategoryId() {
+        String categoryName = categoryComboBox.getValue();
+
+        for (Category c : categories) {
+            if (c.getName().equals(categoryName)) {
+                return c.getId();
+            }
+        }
+
+        return -1;
+    }
+
     private void clearFields() {
         amountField.clear();
         categoryComboBox.setValue(null);
@@ -397,6 +361,7 @@ public class TransactionsController {
 
     private void showError(String msg) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setHeaderText(null);
         alert.setContentText(msg);
         alert.showAndWait();
     }

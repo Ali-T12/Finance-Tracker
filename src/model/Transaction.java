@@ -5,22 +5,45 @@
  */
 package model;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
 /**
  *
  * @author Ali
  */
+@Entity
+@Table(name = "transactions")
 public class Transaction {
-   private int id;
-    private int userId;
-    private int categoryId;
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Transaction() {
+    }
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private int id;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+    @ManyToOne
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
     private double amount;
     private String type;
     private String date;
 
-    public Transaction(int id, int userId, int categoryId, double amount, String type, String date) {
+    public Transaction(int id, User user, Category category, double amount, String type, String date) {
         this.id = id;
-        this.userId = userId;
-        this.categoryId = categoryId;
+        this.user = user;
+        this.category = category;
         this.amount = amount;
         this.type = type;
         this.date = date;
@@ -30,12 +53,12 @@ public class Transaction {
         return id;
     }
 
-    public int getUserId() {
-        return userId;
+    public User getUser() {
+        return user;
     }
 
-    public int getCategoryId() {
-        return categoryId;
+    public Category getCategory() {
+        return category;
     }
 
     public double getAmount() {
@@ -62,12 +85,12 @@ public class Transaction {
         this.date = date;
     }
 
-    public void setCategoryId(int categoryId) {
-        this.categoryId = categoryId;
+    public void setCategory(Category category) {
+        this.category = category;
     }
 
     @Override
     public String toString() {
-        return id + "," + userId + "," + categoryId + "," + amount + "," + type + "," + date;
+        return id + "," + user.getId() + "," + category.getId() + "," + amount + "," + type + "," + date;
     }
 }

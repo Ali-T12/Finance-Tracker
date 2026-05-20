@@ -1,5 +1,5 @@
 /**
- *علي حمال اسعيد 120220484  
+ *علي حمال اسعيد 120220484
  * محمد منذر الغزالي 120220852
  * تحسين وسام عودة 120220463
  */
@@ -61,7 +61,6 @@ public class SignupController {
         }
 
         boolean success = AuthService.signUp(
-                1,
                 firstName,
                 lastName,
                 email,

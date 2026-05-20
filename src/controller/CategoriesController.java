@@ -1,13 +1,10 @@
-
-
-
+/**
+ * علي حمال اسعيد 120220484
+ * محمد منذر الغزالي 120220852
+ * تحسين وسام عودة 120220463
+ */
 package controller;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,13 +18,8 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
 import model.Category;
-import util.DatabaseConnection;
-import util.Session;
+import repository.CategoryRepository;
 
-/**
- *
- * @author Ali
- */
 public class CategoriesController {
 
     @FXML
@@ -50,15 +42,18 @@ public class CategoriesController {
 
     private ObservableList<Category> categories = FXCollections.observableArrayList();
 
+    private CategoryRepository categoryRepository = new CategoryRepository();
+
     @FXML
     public void initialize() {
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
 
-        // جلب البيانات الخاصة بالمستخدم الحالي من قاعدة البيانات مباشرة
-        loadCategoriesFromDatabase();
+        loadCategories();
 
-        sortComboBox.setItems(FXCollections.observableArrayList("Name Ascending", "Name Descending"));
+        sortComboBox.setItems(
+                FXCollections.observableArrayList("Name Ascending", "Name Descending")
+        );
 
         categoryTable.getSelectionModel().selectedItemProperty().addListener(
                 (obs, oldSelection, selectedCategory) -> {
@@ -69,28 +64,14 @@ public class CategoriesController {
         );
     }
 
-    // دالة لجلب التصنيفات من قاعدة البيانات للمستخدم المسجل حالياً
-    private void loadCategoriesFromDatabase() {
+    private void loadCategories() {
         categories.clear();
-        String query = "SELECT * FROM categories WHERE user_id = ?";
+        List<Category> categoryList = categoryRepository.findAll();
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
-            ps.setInt(1, Session.currentUser.getId());
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    categories.add(new Category(
-                            rs.getInt("id"),
-                            rs.getInt("user_id"),
-                            rs.getString("name")
-                    ));
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            showError("Failed to load categories from database.");
+        if (categoryList != null) {
+            categories.addAll(categoryList);
         }
+
         categoryTable.setItems(categories);
     }
 
@@ -103,7 +84,6 @@ public class CategoriesController {
             return;
         }
 
-        // التحقق من التكرار باستخدام Streams على القائمة المحملة
         boolean isDuplicate = categories.stream()
                 .anyMatch(c -> c.getName().equalsIgnoreCase(name));
 
@@ -112,23 +92,15 @@ public class CategoriesController {
             return;
         }
 
-        // إدخال التصنيف الجديد في قاعدة البيانات
-        String query = "INSERT INTO categories (user_id, name) VALUES (?, ?)";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
-            ps.setInt(1, Session.currentUser.getId());
-            ps.setString(2, name);
-            ps.executeUpdate();
+        Category addedCategory = categoryRepository.add(name);
 
-            // إعادة تحميل البيانات لتحديث الجدول بالـ ID الجديد التلقائي من قاعدة البيانات
-            loadCategoriesFromDatabase();
-            nameField.clear();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            showError("Failed to add category to database.");
+        if (addedCategory == null) {
+            showError("Failed to add category.");
+            return;
         }
+
+        loadCategories();
+        nameField.clear();
     }
 
     @FXML
@@ -147,34 +119,25 @@ public class CategoriesController {
             return;
         }
 
-        // التحقق من عدم تكرار الاسم مع أي تصنيف آخر لنفس المستخدم
         boolean isDuplicate = categories.stream()
-                .anyMatch(c -> c.getId() != selected.getId() && c.getName().equalsIgnoreCase(newName));
+                .anyMatch(c -> c.getId() != selected.getId()
+                && c.getName().equalsIgnoreCase(newName));
 
         if (isDuplicate) {
             showError("Duplicate category name.");
             return;
         }
 
-        // تحديث الاسم في قاعدة البيانات بناءً على الـ ID
-        String query = "UPDATE categories SET name = ? WHERE id = ? AND user_id = ?";
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(query)) {
-            
-            ps.setString(1, newName);
-            ps.setInt(2, selected.getId());
-            ps.setInt(3, Session.currentUser.getId());
-            ps.executeUpdate();
+        selected.setName(newName);
+        Category updatedCategory = categoryRepository.update(selected);
 
-            // تحديث الواجهة مباشرة
-            selected.setName(newName);
-            categoryTable.refresh();
-            nameField.clear();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
+        if (updatedCategory == null) {
             showError("Failed to update category.");
+            return;
         }
+
+        loadCategories();
+        nameField.clear();
     }
 
     @FXML
@@ -186,7 +149,6 @@ public class CategoriesController {
             return;
         }
 
-        // الفلترة باستخدام الـ Streams المطلوبة في المشروع
         List<Category> result = categories.stream()
                 .filter(c -> c.getName().toLowerCase().contains(keyword.toLowerCase()))
                 .collect(Collectors.toList());

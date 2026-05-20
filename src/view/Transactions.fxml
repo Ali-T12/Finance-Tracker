@@ -89,7 +89,7 @@
                <columns>
                   <TableColumn fx:id="idColumn" prefWidth="75.0" text="ID" />
                   <TableColumn fx:id="userIdColumn" prefWidth="75.0" text="User ID" />
-                  <TableColumn fx:id="categoryIdColumn" prefWidth="75.0" text="Category ID" />
+                  <TableColumn fx:id="categoryIdColumn" prefWidth="75.0" text="Category" />
                   <TableColumn fx:id="amountColumn" prefWidth="75.0" text="Amount" />
                   <TableColumn fx:id="typeColumn" prefWidth="75.0" text="Type" />
                   <TableColumn fx:id="dateColumn" prefWidth="75.0" text="Date" />

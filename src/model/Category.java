@@ -4,27 +4,46 @@
  * تحسين وسام عودة 120220463
  */
 package model;
-
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 /**
  *
  * @author Ali
  */
+@Entity
+@Table(name = "categories")
 public class Category {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    private int userId;
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public Category() {
+    }
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
     private String name;
 
-    public Category(int id, int userId, String name) {
+    public Category(int id, User user, String name) {
         this.id = id;
-        this.userId = userId;
+        this.user = user;
         this.name = name;
     }
 
     public void setId(int id) {
         this.id = id;
     }
-     public int getUserId() {
-        return userId;
+    public User getUser() {
+        return user;
     }
 
     public void setName(String name) {
@@ -40,6 +59,6 @@ public class Category {
     }
     @Override
     public String toString() {
-        return id + "," + userId + "," + name;
+        return id + "," + user.getId() + "," + name;
     }
 }
