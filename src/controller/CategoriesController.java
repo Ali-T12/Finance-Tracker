@@ -1,13 +1,9 @@
-/**
- * علي حمال اسعيد 120220484
- * محمد منذر الغزالي 120220852
- * تحسين وسام عودة 120220463
- */
 package controller;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -46,14 +42,15 @@ public class CategoriesController {
 
     @FXML
     public void initialize() {
+
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-
-        loadCategories();
 
         sortComboBox.setItems(
                 FXCollections.observableArrayList("Name Ascending", "Name Descending")
         );
+
+        loadCategories();
 
         categoryTable.getSelectionModel().selectedItemProperty().addListener(
                 (obs, oldSelection, selectedCategory) -> {
@@ -64,17 +61,27 @@ public class CategoriesController {
         );
     }
 
-    private void loadCategories() {
-        categories.clear();
-        List<Category> categoryList = categoryRepository.findAll();
+    // ================= LOAD =================
+   private void loadCategories() {
 
-        if (categoryList != null) {
-            categories.addAll(categoryList);
-        }
+    new Thread(() -> {
 
-        categoryTable.setItems(categories);
-    }
+        List<Category> list = categoryRepository.findAllSync(); // مهم تكون Sync
 
+        Platform.runLater(() -> {
+            categories.clear();
+
+            if (list != null) {
+                categories.addAll(list);
+            }
+
+            categoryTable.setItems(categories);
+        });
+
+    }).start();
+}
+
+    // ================= ADD =================
     @FXML
     private void handleAddCategory() {
         String name = nameField.getText().trim();
@@ -92,17 +99,15 @@ public class CategoriesController {
             return;
         }
 
-        Category addedCategory = categoryRepository.add(name);
+        categoryRepository.addAsync(name);
 
-        if (addedCategory == null) {
-            showError("Failed to add category.");
-            return;
-        }
-
-        loadCategories();
         nameField.clear();
+
+        // reload بعد شوي لأن العملية async
+        refreshAfterDelay();
     }
 
+    // ================= EDIT =================
     @FXML
     private void handleEditCategory() {
         Category selected = categoryTable.getSelectionModel().getSelectedItem();
@@ -121,7 +126,7 @@ public class CategoriesController {
 
         boolean isDuplicate = categories.stream()
                 .anyMatch(c -> c.getId() != selected.getId()
-                && c.getName().equalsIgnoreCase(newName));
+                        && c.getName().equalsIgnoreCase(newName));
 
         if (isDuplicate) {
             showError("Duplicate category name.");
@@ -129,17 +134,14 @@ public class CategoriesController {
         }
 
         selected.setName(newName);
-        Category updatedCategory = categoryRepository.update(selected);
 
-        if (updatedCategory == null) {
-            showError("Failed to update category.");
-            return;
-        }
+        categoryRepository.updateAsync(selected);
 
-        loadCategories();
         nameField.clear();
+        refreshAfterDelay();
     }
 
+    // ================= SEARCH =================
     @FXML
     private void handleSearchCategory() {
         String keyword = searchField.getText().trim();
@@ -161,6 +163,7 @@ public class CategoriesController {
         categoryTable.setItems(FXCollections.observableArrayList(result));
     }
 
+    // ================= SORT =================
     @FXML
     private void handleSortCategory() {
         String sortOption = sortComboBox.getValue();
@@ -185,6 +188,7 @@ public class CategoriesController {
         categoryTable.setItems(FXCollections.observableArrayList(sortedList));
     }
 
+    // ================= RESET =================
     @FXML
     private void handleResetCategory() {
         categoryTable.setItems(categories);
@@ -192,6 +196,28 @@ public class CategoriesController {
         sortComboBox.setValue(null);
     }
 
+    // ================= REFRESH =================
+    private void refreshAfterDelay() {
+        new Thread(() -> {
+            try {
+                Thread.sleep(300); // small delay عشان DB تخلص
+
+                List<Category> list = categoryRepository.findAllSync();
+
+                Platform.runLater(() -> {
+                    if (list != null) {
+                        categories.setAll(list);
+                        categoryTable.setItems(categories);
+                    }
+                });
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    // ================= ERROR =================
     private void showError(String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setHeaderText(null);

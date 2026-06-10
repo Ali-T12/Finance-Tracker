@@ -7,8 +7,10 @@ import util.Session;
 
 public class AuthService {
 
+    private static final UserRepository userRepository = new UserRepository();
+
+    // ================= SIGN UP =================
     public static boolean signUp(String firstName, String lastName, String email, String password) {
-        UserRepository userRepository = new UserRepository();
 
         if (userRepository.findByEmail(email) != null) {
             return false;
@@ -22,27 +24,11 @@ public class AuthService {
         user.setEmail(email);
         user.setPasswordHash(encryptedPassword);
 
-        User addedUser = userRepository.add(user);
-
-        return addedUser != null;
+        return userRepository.add(user) != null;
     }
 
-    public static User findUserByEmail(String email) {
-        UserRepository userRepository = new UserRepository();
-        return userRepository.findByEmail(email);
-    }
-
-    public static boolean checkPassword(User user, String password) {
-        if (user == null) {
-            return false;
-        }
-
-        String encryptedPassword = MD5Util.encrypt(password);
-        return user.getPasswordHash().equals(encryptedPassword);
-    }
-
+    // ================= LOGIN =================
     public static boolean login(String email, String password) {
-        UserRepository userRepository = new UserRepository();
 
         User user = userRepository.findByEmail(email);
 
@@ -58,6 +44,22 @@ public class AuthService {
         return true;
     }
 
+    // ================= PASSWORD CHECK =================
+    public static boolean checkPassword(User user, String password) {
+
+        if (user == null) return false;
+
+        String encryptedPassword = MD5Util.encrypt(password);
+
+        return user.getPasswordHash().equals(encryptedPassword);
+    }
+
+    // ================= FIND USER =================
+    public static User findUserByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
+    // ================= LOGOUT =================
     public static void logout() {
         Session.currentUser = null;
     }

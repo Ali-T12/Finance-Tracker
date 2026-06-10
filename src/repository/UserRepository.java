@@ -1,13 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package repository;
-
-/**
- *
- * @author MOHAMMAD
- */
 
 import java.util.List;
 import javax.persistence.EntityManager;
@@ -17,28 +8,29 @@ import javax.persistence.TypedQuery;
 import model.User;
 
 public class UserRepository {
-        EntityManagerFactory emf ;
-        EntityManager em ;
+
+    private EntityManagerFactory emf;
 
     public UserRepository() {
-        emf = Persistence.createEntityManagerFactory("Finance_TrackerPU");
-        em = emf.createEntityManager();
+        this.emf = Persistence.createEntityManagerFactory("Finance_TrackerPU");
     }
-        
+
+    // ================= ADD =================
     public User add(User user) {
-        
+
+        EntityManager em = emf.createEntityManager();
 
         try {
             em.getTransaction().begin();
             em.persist(user);
             em.getTransaction().commit();
+
             return user;
 
         } catch (Exception e) {
             if (em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
-
             e.printStackTrace();
             return null;
 
@@ -47,19 +39,22 @@ public class UserRepository {
         }
     }
 
+    // ================= UPDATE =================
     public User update(User user) {
+
+        EntityManager em = emf.createEntityManager();
 
         try {
             em.getTransaction().begin();
             User updatedUser = em.merge(user);
             em.getTransaction().commit();
+
             return updatedUser;
 
         } catch (Exception e) {
             if (em.getTransaction().isActive()) {
                 em.getTransaction().rollback();
             }
-
             e.printStackTrace();
             return null;
 
@@ -68,7 +63,10 @@ public class UserRepository {
         }
     }
 
+    // ================= FIND BY ID =================
     public User findById(int id) {
+
+        EntityManager em = emf.createEntityManager();
 
         try {
             return em.find(User.class, id);
@@ -78,7 +76,10 @@ public class UserRepository {
         }
     }
 
+    // ================= FIND BY EMAIL =================
     public User findByEmail(String email) {
+
+        EntityManager em = emf.createEntityManager();
 
         try {
             TypedQuery<User> query = em.createQuery(
@@ -90,18 +91,17 @@ public class UserRepository {
 
             List<User> users = query.getResultList();
 
-            if (users.isEmpty()) {
-                return null;
-            }
-
-            return users.get(0);
+            return users.isEmpty() ? null : users.get(0);
 
         } finally {
             em.close();
         }
     }
 
+    // ================= FIND ALL =================
     public List<User> findAll() {
+
+        EntityManager em = emf.createEntityManager();
 
         try {
             return em.createQuery("SELECT u FROM User u", User.class)

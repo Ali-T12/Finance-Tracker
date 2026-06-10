@@ -11,156 +11,166 @@ import util.Session;
 
 public class CategoryRepository {
 
-    EntityManagerFactory emf;
-    EntityManager em;
+    private EntityManagerFactory emf;
 
     public CategoryRepository() {
-        emf = Persistence.createEntityManagerFactory("Finance_TrackerPU");
-        em = emf.createEntityManager();
-
+        this.emf = Persistence.createEntityManagerFactory("Finance_TrackerPU");
     }
 
-    public Category add(String name) {
-        try {
-            if (Session.currentUser == null) {
-                System.out.println("No user logged in.");
-                return null;
+    // ===================== ADD =====================
+    public void addAsync(String name) {
+        new Thread(() -> {
+            EntityManager em = emf.createEntityManager();
+
+            try {
+                if (Session.currentUser == null) {
+                    System.out.println("No user logged in.");
+                    return;
+                }
+
+                User currentUser = em.getReference(User.class, Session.currentUser.getId());
+
+                Category category = new Category(0, currentUser, name);
+
+                em.getTransaction().begin();
+                em.persist(category);
+                em.getTransaction().commit();
+
+                System.out.println("Category added ✔");
+
+            } catch (Exception e) {
+                if (em.getTransaction().isActive()) {
+                    em.getTransaction().rollback();
+                }
+                e.printStackTrace();
+            } finally {
+                em.close();
             }
 
-            User currentUser = em.getReference(User.class, Session.currentUser.getId());
-
-            Category category = new Category(0, currentUser, name);
-
-            em.getTransaction().begin();
-            em.persist(category);
-            em.getTransaction().commit();
-
-            return category;
-
-        } catch (Exception e) {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-
-            e.printStackTrace();
-            return null;
-
-        } 
+        }).start();
     }
 
-    public Category update(Category category) {
+    // ===================== UPDATE =====================
+    public void updateAsync(Category category) {
+        new Thread(() -> {
+            EntityManager em = emf.createEntityManager();
 
-        try {
-            em.getTransaction().begin();
-            Category managedCategory = em.find(Category.class, category.getId());
+            try {
+                em.getTransaction().begin();
 
-            if (managedCategory == null) {
-                em.getTransaction().rollback();
-                return null;
+                Category managed = em.find(Category.class, category.getId());
+
+                if (managed == null) {
+                    em.getTransaction().rollback();
+                    return;
+                }
+
+                managed.setName(category.getName());
+
+                em.getTransaction().commit();
+
+                System.out.println("Category updated ✔");
+
+            } catch (Exception e) {
+                if (em.getTransaction().isActive()) {
+                    em.getTransaction().rollback();
+                }
+            } finally {
+                em.close();
             }
 
-            managedCategory.setName(category.getName());
-
-            em.getTransaction().commit();
-
-            return managedCategory;
-
-        } catch (Exception e) {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-
-            e.printStackTrace();
-            return null;
-
-        } 
+        }).start();
     }
 
-    public boolean delete(int id) {
-        try {
-            if (Session.currentUser == null) {
-                System.out.println("No user logged in.");
-                return false;
+    // ===================== DELETE =====================
+    public void deleteAsync(int id) {
+        new Thread(() -> {
+            EntityManager em = emf.createEntityManager();
+
+            try {
+                if (Session.currentUser == null) {
+                    System.out.println("No user logged in.");
+                    return;
+                }
+
+                TypedQuery<Category> query = em.createQuery(
+                        "SELECT c FROM Category c WHERE c.id = :id AND c.user.id = :userId",
+                        Category.class
+                );
+
+                query.setParameter("id", id);
+                query.setParameter("userId", Session.currentUser.getId());
+
+                List<Category> list = query.getResultList();
+
+                if (list.isEmpty()) return;
+
+                Category category = list.get(0);
+
+                em.getTransaction().begin();
+                em.remove(category);
+                em.getTransaction().commit();
+
+                System.out.println("Category deleted ✔");
+
+            } catch (Exception e) {
+                if (em.getTransaction().isActive()) {
+                    em.getTransaction().rollback();
+                }
+                e.printStackTrace();
+            } finally {
+                em.close();
             }
 
-            TypedQuery<Category> query = em.createQuery(
-                    "SELECT c FROM Category c WHERE c.id = :id AND c.user.id = :userId",
-                    Category.class
-            );
-
-            query.setParameter("id", id);
-            query.setParameter("userId", Session.currentUser.getId());
-
-            List<Category> categories = query.getResultList();
-
-            if (categories.isEmpty()) {
-                return false;
-            }
-
-            Category category = categories.get(0);
-
-            em.getTransaction().begin();
-            em.remove(category);
-            em.getTransaction().commit();
-
-            return true;
-
-        } catch (Exception e) {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-
-            e.printStackTrace();
-            return false;
-
-        } 
+        }).start();
     }
 
-    public Category findById(int id) {
+    // ===================== FIND BY ID =====================
+    public void findByIdAsync(int id) {
+        new Thread(() -> {
+            EntityManager em = emf.createEntityManager();
 
-        try {
-            if (Session.currentUser == null) {
-                System.out.println("No user logged in.");
-                return null;
+            try {
+                TypedQuery<Category> query = em.createQuery(
+                        "SELECT c FROM Category c WHERE c.id = :id AND c.user.id = :userId",
+                        Category.class
+                );
+
+                query.setParameter("id", id);
+                query.setParameter("userId", Session.currentUser.getId());
+
+                List<Category> list = query.getResultList();
+
+                if (list.isEmpty()) {
+                    System.out.println("Not found");
+                    return;
+                }
+
+                System.out.println(list.get(0).getName());
+
+            } finally {
+                em.close();
             }
 
-            TypedQuery<Category> query = em.createQuery(
-                    "SELECT c FROM Category c WHERE c.id = :id AND c.user.id = :userId",
-                    Category.class
-            );
-
-            query.setParameter("id", id);
-            query.setParameter("userId", Session.currentUser.getId());
-
-            List<Category> categories = query.getResultList();
-
-            if (categories.isEmpty()) {
-                return null;
-            }
-
-            return categories.get(0);
-
-        } finally {
-        }
+        }).start();
     }
 
-    public List<Category> findAll() {
-        try {
-            if (Session.currentUser == null) {
-                System.out.println("No user logged in.");
-                return null;
-            }
+    // ===================== FIND ALL =====================
+    public List<Category> findAllSync() {
+    EntityManager em = emf.createEntityManager();
 
-            TypedQuery<Category> query = em.createQuery(
-                    "SELECT c FROM Category c WHERE c.user.id = :userId",
-                    Category.class
-            );
+    try {
+        TypedQuery<Category> query = em.createQuery(
+                "SELECT c FROM Category c WHERE c.user.id = :userId",
+                Category.class
+        );
 
-            query.setParameter("userId", Session.currentUser.getId());
+        query.setParameter("userId", Session.currentUser.getId());
 
-            return query.getResultList();
+        return query.getResultList();
 
-        } finally {
-        }
+    } finally {
+        em.close();
     }
+}
 }

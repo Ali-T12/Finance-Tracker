@@ -1,8 +1,3 @@
-/**
- * علي حمال اسعيد 120220484
- * محمد منذر الغزالي 120220852
- * تحسين وسام عودة 120220463
- */
 package controller;
 
 import java.time.LocalDate;
@@ -10,66 +5,35 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.DatePicker;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import model.Category;
 import model.Transaction;
 import repository.CategoryRepository;
 import repository.TransactionRepository;
-import util.AlertUtil;
 
 public class TransactionsController {
 
-    @FXML
-    private TextField searchCategoryField;
+    @FXML private TextField searchCategoryField;
+    @FXML private DatePicker filterDatePicker;
+    @FXML private ComboBox<String> sortComboBox;
+    @FXML private TextField amountField;
+    @FXML private ComboBox<String> categoryComboBox;
+    @FXML private ComboBox<String> typeComboBox;
+    @FXML private DatePicker datePicker;
 
-    @FXML
-    private DatePicker filterDatePicker;
-
-    @FXML
-    private ComboBox<String> sortComboBox;
-
-    @FXML
-    private TextField amountField;
-
-    @FXML
-    private ComboBox<String> categoryComboBox;
-
-    @FXML
-    private ComboBox<String> typeComboBox;
-
-    @FXML
-    private DatePicker datePicker;
-
-    @FXML
-    private TableView<Transaction> transactionTable;
-
-    @FXML
-    private TableColumn<Transaction, Integer> idColumn;
-
-    @FXML
-    private TableColumn<Transaction, Integer> userIdColumn;
-
-    @FXML
-    private TableColumn<Transaction, String> categoryIdColumn;
-
-    @FXML
-    private TableColumn<Transaction, Double> amountColumn;
-
-    @FXML
-    private TableColumn<Transaction, String> typeColumn;
-
-    @FXML
-    private TableColumn<Transaction, String> dateColumn;
+    @FXML private TableView<Transaction> transactionTable;
+    @FXML private TableColumn<Transaction, Integer> idColumn;
+    @FXML private TableColumn<Transaction, Integer> userIdColumn;
+    @FXML private TableColumn<Transaction, String> categoryIdColumn;
+    @FXML private TableColumn<Transaction, Double> amountColumn;
+    @FXML private TableColumn<Transaction, String> typeColumn;
+    @FXML private TableColumn<Transaction, String> dateColumn;
 
     private ObservableList<Transaction> transactions = FXCollections.observableArrayList();
     private List<Category> categories = new ArrayList<>();
@@ -79,25 +43,22 @@ public class TransactionsController {
 
     @FXML
     public void initialize() {
+
         idColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
 
-        userIdColumn.setCellValueFactory(cellData ->
-                new ReadOnlyObjectWrapper<>(cellData.getValue().getUser().getId())
+        userIdColumn.setCellValueFactory(c ->
+                new ReadOnlyObjectWrapper<>(c.getValue().getUser().getId())
         );
 
-        categoryIdColumn.setCellValueFactory(cellData ->
-                new ReadOnlyObjectWrapper<>(cellData.getValue().getCategory().getName())
+        categoryIdColumn.setCellValueFactory(c ->
+                new ReadOnlyObjectWrapper<>(c.getValue().getCategory().getName())
         );
 
         amountColumn.setCellValueFactory(new PropertyValueFactory<>("amount"));
         typeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("date"));
 
-        loadCategories();
-        loadTransactions();
-
         typeComboBox.setItems(FXCollections.observableArrayList("Income", "Expense"));
-
         sortComboBox.setItems(FXCollections.observableArrayList(
                 "Amount Ascending",
                 "Amount Descending",
@@ -105,8 +66,11 @@ public class TransactionsController {
                 "Date Descending"
         ));
 
+        loadCategories();
+        loadTransactions();
+
         transactionTable.getSelectionModel().selectedItemProperty().addListener(
-                (obs, oldSelection, selected) -> {
+                (obs, oldVal, selected) -> {
                     if (selected != null) {
                         amountField.setText(String.valueOf(selected.getAmount()));
                         typeComboBox.setValue(selected.getType());
@@ -120,38 +84,54 @@ public class TransactionsController {
         );
     }
 
+    // ================= LOAD CATEGORIES =================
     private void loadCategories() {
-        categories.clear();
-        categoryComboBox.getItems().clear();
 
-        List<Category> categoryList = categoryRepository.findAll();
+        new Thread(() -> {
 
-        if (categoryList != null) {
-            categories.addAll(categoryList);
+            List<Category> list = categoryRepository.findAllSync();
 
-            for (Category c : categories) {
-                categoryComboBox.getItems().add(c.getName());
-            }
-        }
+            Platform.runLater(() -> {
+                categories.clear();
+                categoryComboBox.getItems().clear();
+
+                if (list != null) {
+                    categories.addAll(list);
+
+                    for (Category c : list) {
+                        categoryComboBox.getItems().add(c.getName());
+                    }
+                }
+            });
+
+        }).start();
     }
 
+    // ================= LOAD TRANSACTIONS =================
     private void loadTransactions() {
-        transactions.clear();
 
-        List<Transaction> transactionList = transactionRepository.findAll();
+        new Thread(() -> {
 
-        if (transactionList != null) {
-            transactions.addAll(transactionList);
-        }
+            List<Transaction> list = transactionRepository.findAll();
 
-        transactionTable.setItems(transactions);
+            Platform.runLater(() -> {
+                transactions.clear();
+
+                if (list != null) {
+                    transactions.addAll(list);
+                }
+
+                transactionTable.setItems(transactions);
+            });
+
+        }).start();
     }
 
+    // ================= ADD =================
     @FXML
     private void handleAddTransaction() {
-        if (!validateTransactionInput()) {
-            return;
-        }
+
+        if (!validateTransactionInput()) return;
 
         double amount = Double.parseDouble(amountField.getText().trim());
         int categoryId = getSelectedCategoryId();
@@ -161,24 +141,21 @@ public class TransactionsController {
             return;
         }
 
-        Transaction addedTransaction = transactionRepository.add(
+        transactionRepository.addAsync(
                 categoryId,
                 amount,
                 typeComboBox.getValue(),
                 datePicker.getValue().toString()
         );
 
-        if (addedTransaction == null) {
-            showError("Failed to save transaction.");
-            return;
-        }
-
-        loadTransactions();
         clearFields();
+        loadTransactions();
     }
 
+    // ================= EDIT =================
     @FXML
     private void handleEditTransaction() {
+
         Transaction selected = transactionTable.getSelectionModel().getSelectedItem();
 
         if (selected == null) {
@@ -186,9 +163,7 @@ public class TransactionsController {
             return;
         }
 
-        if (!validateTransactionInput()) {
-            return;
-        }
+        if (!validateTransactionInput()) return;
 
         double amount = Double.parseDouble(amountField.getText().trim());
         int categoryId = getSelectedCategoryId();
@@ -198,7 +173,7 @@ public class TransactionsController {
             return;
         }
 
-        Transaction updatedTransaction = transactionRepository.update(
+        transactionRepository.updateAsync(
                 selected.getId(),
                 categoryId,
                 amount,
@@ -206,97 +181,90 @@ public class TransactionsController {
                 datePicker.getValue().toString()
         );
 
-        if (updatedTransaction == null) {
-            showError("Failed to update transaction.");
-            return;
-        }
-
-        loadTransactions();
         clearFields();
+        loadTransactions();
     }
 
+    // ================= SEARCH =================
     @FXML
     private void handleSearchTransaction() {
-        String keyword = searchCategoryField.getText().trim();
-        LocalDate selectedDate = filterDatePicker.getValue();
 
-        if (keyword.isEmpty() && selectedDate == null) {
-            showError("Please enter a category or select a date.");
+        String keyword = searchCategoryField.getText().trim();
+        LocalDate date = filterDatePicker.getValue();
+
+        if (keyword.isEmpty() && date == null) {
+            showError("Enter search data.");
             return;
         }
 
         List<Transaction> result = transactions.stream()
                 .filter(t -> {
-                    boolean matchesCategory = true;
-                    boolean matchesDate = true;
+                    boolean okCategory = true;
+                    boolean okDate = true;
 
                     if (!keyword.isEmpty()) {
-                        String categoryName = "";
+                        String name = (t.getCategory() != null)
+                                ? t.getCategory().getName()
+                                : "";
 
-                        if (t.getCategory() != null) {
-                            categoryName = t.getCategory().getName();
-                        }
-
-                        matchesCategory = categoryName.toLowerCase()
-                                .contains(keyword.toLowerCase());
+                        okCategory = name.toLowerCase().contains(keyword.toLowerCase());
                     }
 
-                    if (selectedDate != null) {
-                        matchesDate = t.getDate().equals(selectedDate.toString());
+                    if (date != null) {
+                        okDate = t.getDate().equals(date.toString());
                     }
 
-                    return matchesCategory && matchesDate;
+                    return okCategory && okDate;
                 })
                 .collect(Collectors.toList());
-
-        if (result.isEmpty()) {
-            showError("No transactions found.");
-            return;
-        }
 
         transactionTable.setItems(FXCollections.observableArrayList(result));
     }
 
+    // ================= SORT =================
     @FXML
     private void handleSortTransaction() {
-        String sortOption = sortComboBox.getValue();
 
-        if (sortOption == null) {
-            showError("Please select a sorting option.");
+        String option = sortComboBox.getValue();
+
+        if (option == null) {
+            showError("Select sort option.");
             return;
         }
 
-        List<Transaction> sortedList;
+        List<Transaction> sorted;
 
-        switch (sortOption) {
+        switch (option) {
+
             case "Amount Ascending":
-                sortedList = transactions.stream()
+                sorted = transactions.stream()
                         .sorted(Comparator.comparingDouble(Transaction::getAmount))
                         .collect(Collectors.toList());
                 break;
 
             case "Amount Descending":
-                sortedList = transactions.stream()
+                sorted = transactions.stream()
                         .sorted(Comparator.comparingDouble(Transaction::getAmount).reversed())
                         .collect(Collectors.toList());
                 break;
 
             case "Date Ascending":
-                sortedList = transactions.stream()
+                sorted = transactions.stream()
                         .sorted(Comparator.comparing(Transaction::getDate))
                         .collect(Collectors.toList());
                 break;
 
             default:
-                sortedList = transactions.stream()
+                sorted = transactions.stream()
                         .sorted(Comparator.comparing(Transaction::getDate).reversed())
                         .collect(Collectors.toList());
                 break;
         }
 
-        transactionTable.setItems(FXCollections.observableArrayList(sortedList));
+        transactionTable.setItems(FXCollections.observableArrayList(sorted));
     }
 
+    // ================= RESET =================
     @FXML
     private void handleResetTransaction() {
         transactionTable.setItems(transactions);
@@ -305,14 +273,16 @@ public class TransactionsController {
         sortComboBox.setValue(null);
     }
 
+    // ================= VALIDATION =================
     private boolean validateTransactionInput() {
+
         if (datePicker.getValue() == null) {
-            showError("Please select a date.");
+            showError("Select date.");
             return false;
         }
 
         if (datePicker.getValue().isAfter(LocalDate.now())) {
-            showError("Future date is not allowed.");
+            showError("Future date not allowed.");
             return false;
         }
 
@@ -323,28 +293,27 @@ public class TransactionsController {
             return false;
         }
 
-        double amount;
-
         try {
-            amount = Double.parseDouble(amountField.getText().trim());
+            double amount = Double.parseDouble(amountField.getText().trim());
+            if (amount <= 0) {
+                showError("Amount must be positive.");
+                return false;
+            }
         } catch (Exception e) {
             showError("Invalid amount.");
-            return false;
-        }
-
-        if (amount <= 0) {
-            showError("Amount must be positive.");
             return false;
         }
 
         return true;
     }
 
+    // ================= CATEGORY ID =================
     private int getSelectedCategoryId() {
-        String categoryName = categoryComboBox.getValue();
+
+        String name = categoryComboBox.getValue();
 
         for (Category c : categories) {
-            if (c.getName().equals(categoryName)) {
+            if (c.getName().equals(name)) {
                 return c.getId();
             }
         }

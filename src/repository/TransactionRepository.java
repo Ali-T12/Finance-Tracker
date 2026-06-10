@@ -1,6 +1,7 @@
 package repository;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
@@ -12,163 +13,154 @@ import util.Session;
 
 public class TransactionRepository {
 
-    EntityManagerFactory emf;
-    EntityManager em;
+    private EntityManagerFactory emf;
 
     public TransactionRepository() {
-        emf = Persistence.createEntityManagerFactory("Finance_TrackerPU");
-                em = emf.createEntityManager();
-
+        this.emf = Persistence.createEntityManagerFactory("Finance_TrackerPU");
     }
 
-    public Transaction add(int categoryId, double amount, String type, String date) {
+    // ===================== ADD (ASYNC) =====================
+    public void addAsync(int categoryId, double amount, String type, String date) {
 
-        try {
-            if (Session.currentUser == null) {
-                System.out.println("No user logged in.");
-                return null;
+        new Thread(() -> {
+
+            EntityManager em = emf.createEntityManager();
+
+            try {
+                if (Session.currentUser == null) {
+                    System.out.println("No user logged in.");
+                    return;
+                }
+
+                User currentUser = em.getReference(User.class, Session.currentUser.getId());
+
+                Category category = findCategoryForCurrentUser(categoryId);
+
+                if (category == null) {
+                    System.out.println("Category not found.");
+                    return;
+                }
+
+                Category managedCategory = em.getReference(Category.class, category.getId());
+
+                Transaction transaction = new Transaction(
+                        0,
+                        currentUser,
+                        managedCategory,
+                        amount,
+                        type,
+                        date
+                );
+
+                em.getTransaction().begin();
+                em.persist(transaction);
+                em.getTransaction().commit();
+
+                System.out.println("Transaction added ✔");
+
+            } catch (Exception e) {
+                if (em.getTransaction().isActive()) {
+                    em.getTransaction().rollback();
+                }
+                e.printStackTrace();
+            } finally {
+                em.close();
             }
 
-            User currentUser = em.getReference(User.class, Session.currentUser.getId());
-
-            Category category = findCategoryForCurrentUser(categoryId);
-
-            if (category == null) {
-                System.out.println("Category not found for current user.");
-                return null;
-            }
-
-            Category managedCategory = em.getReference(Category.class, category.getId());
-
-            Transaction transaction = new Transaction(
-                    0,
-                    currentUser,
-                    managedCategory,
-                    amount,
-                    type,
-                    date
-            );
-
-            em.getTransaction().begin();
-            em.persist(transaction);
-            em.getTransaction().commit();
-
-            return transaction;
-
-        } catch (Exception e) {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-
-            e.printStackTrace();
-            return null;
-
-        } finally {
-        }
+        }).start();
     }
 
-    public Transaction update(int transactionId, int categoryId, double amount, String type, String date) {
+    // ===================== UPDATE (ASYNC) =====================
+    public void updateAsync(int transactionId, int categoryId, double amount, String type, String date) {
 
-        try {
-            if (Session.currentUser == null) {
-                System.out.println("No user logged in.");
-                return null;
+        new Thread(() -> {
+
+            EntityManager em = emf.createEntityManager();
+
+            try {
+                if (Session.currentUser == null) return;
+
+                Transaction managedTransaction = em.find(Transaction.class, transactionId);
+
+                if (managedTransaction == null) return;
+
+                Category category = findCategoryForCurrentUser(categoryId);
+
+                if (category == null) return;
+
+                em.getTransaction().begin();
+
+                Category managedCategory = em.getReference(Category.class, category.getId());
+
+                managedTransaction.setCategory(managedCategory);
+                managedTransaction.setAmount(amount);
+                managedTransaction.setType(type);
+                managedTransaction.setDate(date);
+
+                em.getTransaction().commit();
+
+                System.out.println("Transaction updated ✔");
+
+            } catch (Exception e) {
+                if (em.getTransaction().isActive()) {
+                    em.getTransaction().rollback();
+                }
+                e.printStackTrace();
+            } finally {
+                em.close();
             }
 
-            Transaction transaction = findById(transactionId);
-
-            if (transaction == null) {
-                return null;
-            }
-
-            Category category = findCategoryForCurrentUser(categoryId);
-
-            if (category == null) {
-                System.out.println("Category not found for current user.");
-                return null;
-            }
-
-            em.getTransaction().begin();
-
-            Transaction managedTransaction = em.find(Transaction.class, transactionId);
-            Category managedCategory = em.getReference(Category.class, category.getId());
-
-            if (managedTransaction == null) {
-                em.getTransaction().rollback();
-                return null;
-            }
-
-            managedTransaction.setCategory(managedCategory);
-            managedTransaction.setAmount(amount);
-            managedTransaction.setType(type);
-            managedTransaction.setDate(date);
-
-            em.getTransaction().commit();
-
-            return managedTransaction;
-
-        } catch (Exception e) {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-
-            e.printStackTrace();
-            return null;
-
-        } finally {
-        }
+        }).start();
     }
 
-    public boolean delete(int id) {
+    // ===================== DELETE (ASYNC) =====================
+    public void deleteAsync(int id) {
 
-        try {
-            if (Session.currentUser == null) {
-                System.out.println("No user logged in.");
-                return false;
+        new Thread(() -> {
+
+            EntityManager em = emf.createEntityManager();
+
+            try {
+                if (Session.currentUser == null) return;
+
+                TypedQuery<Transaction> query = em.createQuery(
+                        "SELECT t FROM Transaction t WHERE t.id = :id AND t.user.id = :userId",
+                        Transaction.class
+                );
+
+                query.setParameter("id", id);
+                query.setParameter("userId", Session.currentUser.getId());
+
+                List<Transaction> list = query.getResultList();
+
+                if (list.isEmpty()) return;
+
+                Transaction transaction = list.get(0);
+
+                em.getTransaction().begin();
+                em.remove(transaction);
+                em.getTransaction().commit();
+
+                System.out.println("Transaction deleted ✔");
+
+            } catch (Exception e) {
+                if (em.getTransaction().isActive()) {
+                    em.getTransaction().rollback();
+                }
+                e.printStackTrace();
+            } finally {
+                em.close();
             }
 
-            TypedQuery<Transaction> query = em.createQuery(
-                    "SELECT t FROM Transaction t WHERE t.id = :id AND t.user.id = :userId",
-                    Transaction.class
-            );
-
-            query.setParameter("id", id);
-            query.setParameter("userId", Session.currentUser.getId());
-
-            List<Transaction> transactions = query.getResultList();
-
-            if (transactions.isEmpty()) {
-                return false;
-            }
-
-            Transaction transaction = transactions.get(0);
-
-            em.getTransaction().begin();
-            em.remove(transaction);
-            em.getTransaction().commit();
-
-            return true;
-
-        } catch (Exception e) {
-            if (em.getTransaction().isActive()) {
-                em.getTransaction().rollback();
-            }
-
-            e.printStackTrace();
-            return false;
-
-        } finally {
-        }
+        }).start();
     }
 
+    // ===================== FIND BY ID (SYNC) =====================
     public Transaction findById(int id) {
 
-        try {
-            if (Session.currentUser == null) {
-                System.out.println("No user logged in.");
-                return null;
-            }
+        EntityManager em = emf.createEntityManager();
 
+        try {
             TypedQuery<Transaction> query = em.createQuery(
                     "SELECT t FROM Transaction t WHERE t.id = :id AND t.user.id = :userId",
                     Transaction.class
@@ -177,26 +169,21 @@ public class TransactionRepository {
             query.setParameter("id", id);
             query.setParameter("userId", Session.currentUser.getId());
 
-            List<Transaction> transactions = query.getResultList();
+            List<Transaction> list = query.getResultList();
 
-            if (transactions.isEmpty()) {
-                return null;
-            }
-
-            return transactions.get(0);
+            return list.isEmpty() ? null : list.get(0);
 
         } finally {
+            em.close();
         }
     }
 
+    // ===================== FIND ALL (SYNC) =====================
     public List<Transaction> findAll() {
 
-        try {
-            if (Session.currentUser == null) {
-                System.out.println("No user logged in.");
-                return null;
-            }
+        EntityManager em = emf.createEntityManager();
 
+        try {
             TypedQuery<Transaction> query = em.createQuery(
                     "SELECT t FROM Transaction t WHERE t.user.id = :userId",
                     Transaction.class
@@ -207,17 +194,16 @@ public class TransactionRepository {
             return query.getResultList();
 
         } finally {
+            em.close();
         }
     }
 
+    // ===================== FIND BY TYPE (SYNC) =====================
     public List<Transaction> findByType(String type) {
 
-        try {
-            if (Session.currentUser == null) {
-                System.out.println("No user logged in.");
-                return null;
-            }
+        EntityManager em = emf.createEntityManager();
 
+        try {
             TypedQuery<Transaction> query = em.createQuery(
                     "SELECT t FROM Transaction t WHERE t.user.id = :userId AND t.type = :type",
                     Transaction.class
@@ -229,14 +215,17 @@ public class TransactionRepository {
             return query.getResultList();
 
         } finally {
+            em.close();
         }
     }
 
+    // ===================== CATEGORY CHECK =====================
     private Category findCategoryForCurrentUser(int categoryId) {
-        EntityManager tempEm = emf.createEntityManager();
+
+        EntityManager em = emf.createEntityManager();
 
         try {
-            TypedQuery<Category> query = tempEm.createQuery(
+            TypedQuery<Category> query = em.createQuery(
                     "SELECT c FROM Category c WHERE c.id = :categoryId AND c.user.id = :userId",
                     Category.class
             );
@@ -244,16 +233,12 @@ public class TransactionRepository {
             query.setParameter("categoryId", categoryId);
             query.setParameter("userId", Session.currentUser.getId());
 
-            List<Category> categories = query.getResultList();
+            List<Category> list = query.getResultList();
 
-            if (categories.isEmpty()) {
-                return null;
-            }
-
-            return categories.get(0);
+            return list.isEmpty() ? null : list.get(0);
 
         } finally {
-            tempEm.close();
+            em.close();
         }
     }
 }
