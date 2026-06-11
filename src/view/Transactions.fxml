@@ -5,8 +5,10 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.DatePicker?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
@@ -16,86 +18,100 @@
 <?import javafx.scene.text.Font?>
 
 <BorderPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1" fx:controller="controller.TransactionsController">
-   <center>
-      <AnchorPane BorderPane.alignment="CENTER">
-         <children>
-            <Label alignment="CENTER" contentDisplay="CENTER" text="Transaction" textFill="WHITE" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="10.0">
-               <font>
-                  <Font name="System Bold" size="18.0" />
-               </font>
-            </Label>
-            <GridPane alignment="CENTER" hgap="10.0" layoutX="199.2" layoutY="44.8" prefHeight="199.0" prefWidth="351.0" vgap="10.0" AnchorPane.leftAnchor="199.0" AnchorPane.rightAnchor="50.0" AnchorPane.topAnchor="45.0">
-               <columnConstraints>
-                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
-               </columnConstraints>
-               <rowConstraints>
-                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                  <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-               </rowConstraints>
-               <children>
-                  <Label contentDisplay="CENTER" text="Amount" textFill="WHITE" GridPane.halignment="CENTER">
-                     <font>
-                        <Font name="System Bold" size="14.0" />
-                     </font>
-                  </Label>
-                  <TextField fx:id="amountField" prefWidth="200.0" GridPane.columnIndex="1" GridPane.halignment="CENTER">
-                     <font>
-                        <Font size="14.0" />
-                     </font>
-                     <GridPane.margin>
-                        <Insets left="23.0" right="23.0" />
-                     </GridPane.margin>
-                  </TextField>
-                  <Label text="Category" textFill="WHITE" GridPane.halignment="CENTER" GridPane.rowIndex="1">
-                     <font>
-                        <Font name="System Bold" size="14.0" />
-                     </font>
-                  </Label>
-                  <Label text="Type" textFill="WHITE" GridPane.halignment="CENTER" GridPane.rowIndex="2">
-                     <font>
-                        <Font name="System Bold" size="14.0" />
-                     </font>
-                  </Label>
-                  <Label text="Transaction Date" textFill="WHITE" GridPane.halignment="CENTER" GridPane.rowIndex="3">
-                     <font>
-                        <Font name="System Bold" size="14.0" />
-                     </font>
-                  </Label>
-                  <Button mnemonicParsing="false" onAction="#handleAddTransaction" style="-fx-background-color: #3e89cb;" text="Add" textFill="WHITE" GridPane.halignment="CENTER" GridPane.rowIndex="4">
-                     <font>
-                        <Font name="System Bold" size="14.0" />
-                     </font>
-                  </Button>
-                  <Button mnemonicParsing="false" onAction="#handleEditTransaction" style="-fx-background-color: #3e89cb;" text="Edit" textFill="WHITE" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="4">
-                     <font>
-                        <Font name="System Bold" size="14.0" />
-                     </font>
-                  </Button>
-                  <ComboBox fx:id="categoryComboBox" prefWidth="200.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
-                  <ComboBox fx:id="typeComboBox" prefWidth="200.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="2" />
-                  <DatePicker fx:id="datePicker" prefWidth="200.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="3" />
-               </children>
-            </GridPane>
-            <TextField fx:id="searchCategoryField" layoutX="26.0" layoutY="89.0" promptText="Search Category" />
-<DatePicker fx:id="filterDatePicker" layoutX="26.0" layoutY="176.0" />
-<Button layoutX="101.0" layoutY="212.0" onAction="#handleSearchTransaction" text="Search" />
-<ComboBox fx:id="sortComboBox" layoutX="25.0" layoutY="131.0" onAction="#handleSortTransaction" promptText="Sort by" />
-<Button layoutX="43.0" layoutY="212.0" onAction="#handleResetTransaction" text="Reset" />
-            <TableView fx:id="transactionTable" prefHeight="200.0" prefWidth="200.0" AnchorPane.leftAnchor="73.0" AnchorPane.rightAnchor="74.0" AnchorPane.topAnchor="250.0">
-               <columns>
-                  <TableColumn fx:id="idColumn" prefWidth="75.0" text="ID" />
-                  <TableColumn fx:id="userIdColumn" prefWidth="75.0" text="User ID" />
-                  <TableColumn fx:id="categoryIdColumn" prefWidth="75.0" text="Category" />
-                  <TableColumn fx:id="amountColumn" prefWidth="75.0" text="Amount" />
-                  <TableColumn fx:id="typeColumn" prefWidth="75.0" text="Type" />
-                  <TableColumn fx:id="dateColumn" prefWidth="75.0" text="Date" />
-               </columns>
-            </TableView>
-         </children>
-      </AnchorPane>
-   </center>
+    <center>
+        <AnchorPane BorderPane.alignment="CENTER">
+            <children>
+                <Label alignment="CENTER" contentDisplay="CENTER" text="Transaction" textFill="WHITE" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="10.0">
+                    <font>
+                        <Font name="System Bold" size="18.0" />
+                    </font>
+                </Label>
+                <GridPane alignment="CENTER" hgap="10.0" layoutX="199.2" layoutY="44.8" prefHeight="199.0" prefWidth="351.0" vgap="10.0" AnchorPane.leftAnchor="199.0" AnchorPane.rightAnchor="50.0" AnchorPane.topAnchor="45.0">
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                    </rowConstraints>
+                    <children>
+                        <Label contentDisplay="CENTER" text="Amount" textFill="WHITE" GridPane.halignment="CENTER">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Label>
+                        <TextField fx:id="amountField" prefWidth="200.0" GridPane.columnIndex="1" GridPane.halignment="CENTER">
+                            <font>
+                                <Font size="14.0" />
+                            </font>
+                            <GridPane.margin>
+                                <Insets left="23.0" right="23.0" />
+                            </GridPane.margin>
+                        </TextField>
+                        <Label text="Category" textFill="WHITE" GridPane.halignment="CENTER" GridPane.rowIndex="1">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Label>
+                        <Label text="Type" textFill="WHITE" GridPane.halignment="CENTER" GridPane.rowIndex="2">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Label>
+                        <Label text="Transaction Date" textFill="WHITE" GridPane.halignment="CENTER" GridPane.rowIndex="3">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Label>
+                        <Button mnemonicParsing="false" onAction="#handleAddTransaction" style="-fx-background-color: #3e89cb;" text="Add" textFill="WHITE" GridPane.halignment="CENTER" GridPane.rowIndex="4">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Button>
+                        <Button mnemonicParsing="false" onAction="#handleEditTransaction" style="-fx-background-color: #3e89cb;" text="Edit" textFill="WHITE" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="4">
+                            <font>
+                                <Font name="System Bold" size="14.0" />
+                            </font>
+                        </Button>
+                        <ComboBox fx:id="categoryComboBox" prefWidth="200.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" />
+                        <ComboBox fx:id="typeComboBox" prefWidth="200.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="2" />
+                        <DatePicker fx:id="datePicker" prefWidth="200.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="3" />
+                    </children>
+                </GridPane>
+                <TextField fx:id="searchCategoryField" layoutX="26.0" layoutY="89.0" promptText="Search Category" />
+                <DatePicker fx:id="filterDatePicker" layoutX="26.0" layoutY="176.0" />
+                <Button layoutX="101.0" layoutY="212.0" onAction="#handleSearchTransaction" text="Search" />
+                <ComboBox fx:id="sortComboBox" layoutX="25.0" layoutY="131.0" onAction="#handleSortTransaction" promptText="Sort by" />
+                <Button layoutX="43.0" layoutY="212.0" onAction="#handleResetTransaction" text="Reset" />
+                <Button fx:id="refreshButton" layoutX="25.0" layoutY="14.0" onAction="#handleRefreshTransactions" text="Refresh" />
+                <Button layoutX="17.0" layoutY="250.0" onAction="#showTransactions" text="Show Transactions" />
+
+<Button layoutX="25.0" layoutY="285.0" onAction="#showSummary" text="Show Summary" />
+
+                <Button fx:id="summaryButton" layoutX="95.0" layoutY="14.0" onAction="#handleGenerateCategorySummary" text="Category Summary" />
+
+                <Button fx:id="cancelButton" layoutX="27.0" layoutY="56.0" onAction="#handleCancelTask" text="Cancel" />
+
+                <ProgressIndicator fx:id="progressIndicator" layoutX="290.0" layoutY="10.0" prefHeight="35.0" prefWidth="35.0" />
+
+                <Label fx:id="statusLabel" layoutX="127.0" layoutY="60.0" text="Ready" textFill="WHITE" />
+
+                <TextArea fx:id="summaryArea" editable="false" layoutX="143.0" layoutY="251.0" prefHeight="134.0" prefWidth="451.0" />
+                <TableView fx:id="transactionTable" layoutX="142.0" layoutY="250.0" prefHeight="120.0" AnchorPane.leftAnchor="142.0" AnchorPane.rightAnchor="5.0" AnchorPane.topAnchor="250.0">
+                    <columns>
+                        <TableColumn fx:id="idColumn" prefWidth="75.0" text="ID" />
+                        <TableColumn fx:id="userIdColumn" prefWidth="75.0" text="User ID" />
+                        <TableColumn fx:id="categoryIdColumn" prefWidth="75.0" text="Category" />
+                        <TableColumn fx:id="amountColumn" prefWidth="75.0" text="Amount" />
+                        <TableColumn fx:id="typeColumn" prefWidth="75.0" text="Type" />
+                        <TableColumn fx:id="dateColumn" prefWidth="75.0" text="Date" />
+                    </columns>
+                </TableView>
+            </children>
+        </AnchorPane>
+    </center>
 </BorderPane>

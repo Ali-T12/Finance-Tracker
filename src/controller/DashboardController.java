@@ -1,5 +1,5 @@
 /**
- *علي حمال اسعيد 120220484  
+ *علي حمال اسعيد 120220484
  * محمد منذر الغزالي 120220852
  * تحسين وسام عودة 120220463
  */
@@ -52,6 +52,11 @@ public class DashboardController {
     @FXML
     private void goToReports() {
         loadPage("Reports.fxml");
+    }
+
+    @FXML
+    private void goToFinancialStatement() {
+        loadPage("FinancialStatement.fxml");
     }
 
     private void loadPage(String page) {
